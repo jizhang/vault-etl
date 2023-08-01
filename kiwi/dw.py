@@ -14,7 +14,7 @@ Params = Optional[Dict[str, Any]]
 logger = logging.getLogger(__name__)
 
 
-def run_sql_file(job, filename: str, drop_tmp: bool = True, params: Params = None):
+def run(job, filename: str, drop_tmp: bool = True, params: Params = None):
     """
     在 dw 库中运行脚本,按分号切分,逐条运行。
 
