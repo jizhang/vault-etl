@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "kiwi"
+version = "0.1.0"
+description = ""
+authors = ["Jerry <zhangji87@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+SQLAlchemy = "^2.0.19"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.0.281"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
