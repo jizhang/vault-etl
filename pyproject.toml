@@ -15,3 +15,11 @@ ruff = "^0.0.281"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+select = ["E", "F", "W", "Q", "COM", "I", "N", "B", "RUF"]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.flake8-quotes]
+inline-quotes = "single"
