@@ -1,2 +1,7 @@
+default: test
+
+dev:
+	poetry install
+
 test:
-	poetry run ruff --fix kiwi
+	poetry run ruff --fix kiwi dw_run.py
