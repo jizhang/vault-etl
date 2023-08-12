@@ -1,20 +1,19 @@
 import logging
 import random
-import sys
 import time
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from datetime import datetime, timedelta
 from importlib import import_module
 from typing import Any
 
-import sqlalchemy
+import sqlalchemy.exc
 
 from kiwi import app, db
 
 logger = logging.getLogger(__name__)
 
 
-def main() -> int:
+def main() -> None:
     parser = ArgumentParser()
     parser.add_argument('--job', required=True,
                         help='脚本名称,如 adb_report_task_daily, once.fix_task_data')
@@ -40,10 +39,10 @@ def main() -> int:
     if args.suffix is None:
         args.suffix = default_suffix
 
-    return run_job(args)
+    run_job(args)
 
 
-def run_job(args, times=0) -> int:
+def run_job(args: Namespace, times=0):
     """运行单次脚本。如果发生数据库错误则重试。"""
     try:
         mod: Any = import_module('kiwi.{}'.format(args.job))
@@ -59,25 +58,18 @@ def run_job(args, times=0) -> int:
         if app.config.get('fp'):
             logger.info('Job succeeded.')
 
-        return 0
-
-    except sqlalchemy.exc.OperationalError:
+    except sqlalchemy.exc.OperationalError as e:
         # 重试 5 次;测试环境不重试
         if times >= 5 or app.config.get('fp'):
-            logger.exception('hit retry limit')
-            return 2
+            raise Exception('Hit retry limit') from e
 
         # 随机等待 10-15 秒
         delay_secs = 10 + round(5 * random.random(), 1)
-        logger.warning(f'caught exception, retry in {delay_secs} seconds...', exc_info=True)
+        logger.warning('Caught exception, retry in %d seconds...', delay_secs, exc_info=True)
         db.remove_sessions()
         time.sleep(delay_secs)
         times += 1
-        return run_job(args, times)
-
-    except Exception:
-        logger.exception('unexpected error')
-        return 2
+        run_job(args, times)
 
 
 def get_today() -> str:
@@ -94,5 +86,6 @@ def convert_date(s: str) -> str:
     date = datetime.strptime(s, '%Y-%m-%d')
     return date.strftime('%Y%m%d')
 
+
 if __name__ == '__main__':
-    sys.exit(main())
+    main()
