@@ -4,8 +4,9 @@ from typing import Any, Dict
 
 import yaml
 
+from .sqlalchemy import SQLAlchemy
+
 logger = logging.getLogger(__name__)
-db: Any = None
 
 
 class Application:
@@ -34,3 +35,4 @@ class Application:
 
 
 app = Application()
+db = SQLAlchemy(app)
