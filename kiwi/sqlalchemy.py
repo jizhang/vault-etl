@@ -9,10 +9,12 @@ if TYPE_CHECKING:
 
 
 class SQLAlchemy:
-    def __init__(self, app: 'Application'):
-        self.app = app
+    def __init__(self):
         self.sessions: Dict[str, scoped_session] = {}
         self.session_lock = Lock()
+
+    def init_app(self, app: 'Application'):
+        self.app = app
 
     def session(self, name: str) -> Session:
         with self.session_lock:

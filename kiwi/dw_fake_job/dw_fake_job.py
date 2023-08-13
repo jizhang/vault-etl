@@ -22,3 +22,4 @@ class Job:
             {'date': self.date},
         )
         logger.info('Result: %d', result)
+        logger.debug('Debug info')

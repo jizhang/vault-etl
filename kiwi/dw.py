@@ -8,8 +8,7 @@ from typing import Any, Callable, Dict, Iterable, Iterator, List, Match, Optiona
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from kiwi import db
-from kiwi.consts import PRINT_SQL_SUFFIX
+from kiwi import app, db
 
 T = TypeVar('T')
 Params = Optional[Dict[str, Any]]
@@ -56,8 +55,10 @@ def run(job, filename: str, drop_tmp: bool = True, params: Params = None):
 
 def run_sql(session: Session, sql: str):
     """执行 SQL 语句"""
+    if not app.debug:
+        logger.info('Execute\n%s', sql)
     with session.begin():
-        sql_result = session.execute(text(sql + PRINT_SQL_SUFFIX))
+        sql_result = session.execute(text(sql))
     logger.info('Affected rows: %d', sql_result.rowcount)
 
 
