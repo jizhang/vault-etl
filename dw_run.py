@@ -24,6 +24,7 @@ def main() -> None:
     parser.add_argument('--date', help='指定日期,格式为 2021-05-17。'
                                        '不同模式有默认值,可用该参数覆盖。')
     parser.add_argument('--suffix', help='指定临时表后缀。不同模式有默认值,可用该参数覆盖。')
+    parser.add_argument('-v', '--verbose', action='store_true', help='verbose logging')
     parser.add_argument('params', nargs='*', metavar='params')
     args = parser.parse_args()
 
@@ -39,6 +40,10 @@ def main() -> None:
     if args.suffix is None:
         args.suffix = default_suffix
 
+    if args.verbose:
+        app.debug = True
+
+    app.start()
     run_job(args)
 
 

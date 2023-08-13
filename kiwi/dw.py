@@ -5,8 +5,10 @@ import re
 from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, Iterable, Iterator, List, Match, Optional, Set, TypeVar
 
-from kiwi import db
-from kiwi.consts import PRINT_SQL_SUFFIX
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from kiwi import app, db
 
 T = TypeVar('T')
 Params = Optional[Dict[str, Any]]
@@ -31,7 +33,7 @@ def run(job, filename: str, drop_tmp: bool = True, params: Params = None):
         sql_content = f.read()
 
     # remove comment
-    sql_content = re.sub(r'/(?s)\*.*?\*/', '', sql_content)
+    sql_content = re.sub(r'(?s)/\*.*?\*/', '', sql_content)
     sql_content = re.sub(r'(?m)--\s+.*$', '', sql_content)
 
     # replace params
@@ -41,21 +43,23 @@ def run(job, filename: str, drop_tmp: bool = True, params: Params = None):
     sqls = [i.strip() for i in sql_content.split(';') if i.strip()]
 
     # run
-    engine = db.engine('dw')  # TODO
+    session = db.session('dw')
     tmp_tables: Set[str] = set()
     for sql in sqls:
-        run_sql(engine, sql)
+        run_sql(session, sql)
         collect_tmp_tables(tmp_tables, sql)
 
     if drop_tmp:
-        drop_tmp_tables(engine, tmp_tables)
+        drop_tmp_tables(session, tmp_tables)
 
 
-def run_sql(engine, sql: str):
+def run_sql(session: Session, sql: str):
     """执行 SQL 语句"""
-    sql = sql.replace('%', '%%')
-    sql_result = engine.execute(sql + PRINT_SQL_SUFFIX)
-    logger.info('affected rows {}'.format(sql_result.rowcount))
+    if not app.debug:
+        logger.info('Execute\n%s', sql)
+    with session.begin():
+        sql_result = session.execute(text(sql))
+    logger.info('Affected rows: %d', sql_result.rowcount)
 
 
 def replace_params(job, sql_content: str, params: Params = None):
@@ -82,15 +86,16 @@ def date_expr(date: str) -> Callable[[Match], str]:
 
 def collect_tmp_tables(tmp_tables: Set[str], sql: str):
     """收集需要删除的临时表"""
-    mo = re.match(r'^(?i)DROP\s+TABLE\s+IF\s+EXISTS\s+(.*)$', sql)
+    mo = re.match(r'(?i)^DROP\s+TABLE\s+IF\s+EXISTS\s+(.*)$', sql)
     if mo is not None:
         tmp_tables.add(mo.group(1))
 
 
-def drop_tmp_tables(engine, tmp_tables: Iterable[str]):
+def drop_tmp_tables(session: Session, tmp_tables: Iterable[str]):
     """删除临时表"""
     for chunk in chunks(list(tmp_tables), 5):
-        run_sql(engine, f'DROP TABLE IF EXISTS {", ".join(chunk)}')
+        table_names = ', '.join(chunk)
+        run_sql(session, f'DROP TABLE IF EXISTS {table_names}')
 
 
 def chunks(data: List[T], n: int) -> Iterator[List[T]]:
