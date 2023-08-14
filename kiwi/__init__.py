@@ -9,10 +9,11 @@ from .sqlalchemy import SQLAlchemy
 logger = logging.getLogger(__name__)
 db = SQLAlchemy()
 
-
 class Application:
+    config: Dict[str, Any]
+
     def __init__(self):
-        self.config: Dict[str, Any] = {}
+        self.config = {}
         self.debug = False
 
     def start(self) -> None:

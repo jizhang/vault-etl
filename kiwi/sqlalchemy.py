@@ -9,8 +9,11 @@ if TYPE_CHECKING:
 
 
 class SQLAlchemy:
+    app: 'Application'
+    sessions: Dict[str, scoped_session]
+
     def __init__(self):
-        self.sessions: Dict[str, scoped_session] = {}
+        self.sessions = {}
         self.session_lock = Lock()
 
     def init_app(self, app: 'Application'):
@@ -20,7 +23,7 @@ class SQLAlchemy:
         with self.session_lock:
             if name not in self.sessions:
                 self.sessions[name] = self.create_session(name)
-            return self.sessions[name]
+            return self.sessions[name]()
 
     def create_session(self, name: str) -> scoped_session:
         conf = self.app.config['database'][name]

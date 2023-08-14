@@ -58,7 +58,7 @@ def run_sql(session: Session, sql: str):
     if not app.debug:
         logger.info('Execute\n%s', sql)
     with session.begin():
-        sql_result = session.execute(text(sql))
+        sql_result: Any = session.execute(text(sql))
     logger.info('Affected rows: %d', sql_result.rowcount)
 
 
